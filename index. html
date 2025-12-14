@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Package Tracking Map</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <!-- Leaflet CSS CDN -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  
+  <style>
+    body { margin: 0; font-family: sans-serif; }
+    #tracking {
+      padding: 10px;
+      background: #f0f0f0;
+      font-size: 16px;
+    }
+    #map { height: 90vh; width: 100%; }
+  </style>
+</head>
+<body>
+
+  <!-- Tracking info panel -->
+  <div id="tracking">
+    <strong>Status:</strong> <span id="status">In Transit</span> | 
+    <strong>Time:</strong> <span id="time">0h 0m</span>
+  </div>
+
+  <!-- Map container -->
+  <div id="map"></div>
+
+  <!-- Leaflet JS CDN -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  
+  <script>
+    // Initialize map
+    var map = L.map('map').setView([6.5244, 3.3792], 3); // Center on Lagos
+    
+    // OpenStreetMap tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    // Route coordinates (Lagos → California)
+    var routeCoords = [
+      [6.5244, 3.3792],       // Lagos
+      [37.7749, -122.4194]    // California
+    ];
+
+    // Blue dotted route line
+    var routeLine = L.polyline(routeCoords, {
+      color: 'blue',
+      weight: 4,
+      dashArray: '10, 10'
+    }).addTo(map);
+
+    map.fitBounds(routeLine.getBounds());
+
+    // Moving marker
+    var marker = L.marker([6.5244, 3.3792]).addTo(map).bindPopup("Package in transit");
+
+    // Destination marker (hidden initially)
+    var destinationMarker = L.marker([37.7749, -122.4194]).bindPopup("Delivered: California");
+
+    // Animation settings
+    var index = 0;
+    var steps = 300;            // number of steps for smoother animation
+    var delay = 50;             // ms per step
+    var totalTimeMinutes = 600; // total simulated delivery time (10 hours)
+
+    function animateMarker() {
+      index++;
+      if(index > steps) {
+        document.getElementById("status").innerText = "Delivered!";
+        document.getElementById("time").innerText = "10h 0m";
+        // Show destination marker
+        destinationMarker.addTo(map).openPopup();
+        return;
+      }
+
+      // Interpolate lat/lng
+      var lat = routeCoords[0][0] + (routeCoords[1][0] - routeCoords[0][0]) * (index / steps);
+      var lng = routeCoords[0][1] + (routeCoords[1][1] - routeCoords[0][1]) * (index / steps);
+      marker.setLatLng([lat, lng]);
+
+      // Update simulated time
+      var elapsedMinutes = Math.floor((index / steps) * totalTimeMinutes);
+      var hours = Math.floor(elapsedMinutes / 60);
+      var minutes = elapsedMinutes % 60;
+      document.getElementById("time").innerText = hours + "h " + minutes + "m";
+
+      setTimeout(animateMarker, delay);
+    }
+
+    animateMarker();
+  </script>
+</body>
+</html>
